@@ -1,29 +1,35 @@
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     username: {
-        type: String,
-        required: true,
-        unique: true,
+      type: String,
+      required: true,
+      unique: true,
     },
     email: {
-        type: String,
-        required: true,
-        unique: true,
+      type: String,
+      required: true,
+      unique: true,
     },
     password: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
-    confirm_password: {
-        type: String,
-        require: true
+    confirmPassword: {
+      type: String,
+      require: true,
     },
-    notes: [{
+    notes: [
+      {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Note',
-    }],
-}, { timestamps: true });
+      },
+    ],
+    refreshToken: String,
+  },
+  { timestamps: true }
+);
 
 const User = mongoose.model('User', userSchema);
 
