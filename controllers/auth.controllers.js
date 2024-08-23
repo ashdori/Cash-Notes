@@ -95,4 +95,58 @@ module.exports = {
       next(error);
     }
   },
+
+  // Login
+  login: async (req, res, next) => {
+    try {
+      let { email, password } = req.body;
+
+      // validate account
+      let userLogin = await User.findOne({ email });
+      if (!userLogin) {
+        return res.status(400).json({
+          status: false,
+          message: 'Bad request!',
+          error: 'Invalid Email or Password.',
+          data: null,
+        });
+      }
+
+      let isPasswordCorrect = await bcrypt.compare(password, User.password);
+      if (!isPasswordCorrect) {
+        return res.status(400).json({
+          status: false,
+          message: 'Bad Request',
+          error: 'Invalid Email or Password',
+        });
+      }
+
+      // jwt
+      let token = jwt.sign(
+        { id: User.account_id, email: User.email },
+        JWT_SECRET_KEY
+      );
+
+      // set token cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 30 * 1000,
+      });
+
+      // success response
+      return res.status(200).json({
+        status: true,
+        message: 'Login successfully.',
+        data: {
+          user: {
+            username: userLogin.username,
+            email: userLogin.email,
+          },
+          jwt: token,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };
