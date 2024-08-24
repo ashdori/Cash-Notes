@@ -12,13 +12,17 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 
 mongoose
-  .connect(process.env.MONGODB_URI, {})
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((error) => {
-    console.error('Error connecting to MongoDB:', error);
-  });
+.connect(process.env.MONGODB_URI, {})
+.then(() => {
+  console.log('Connected to MongoDB');
+})
+.catch((error) => {
+  console.error('Error connecting to MongoDB:', error);
+});
+
+const authRouter = require('./routes/auth.routes')
+
+app.use('/auth', authRouter);
 
 app.use('/', (req, res) => {
   try {
