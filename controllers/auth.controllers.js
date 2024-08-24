@@ -66,18 +66,20 @@ module.exports = {
       // encrypting password
       let encryptedPassword = await bcrypt.hash(password, 10);
 
-      // create user
+      // Generate JWT
+      const token = jwt.sign(
+        { email },
+        JWT_SECRET_KEY,
+        { expiresIn: '1h' }
+      );
+
+      // Create user with JWT
       let createUser = await User.create({
         username,
         email,
         password: encryptedPassword,
+        refreshToken: token
       });
-
-      //set jwt
-      let token = jwt.sign(
-        { account_id: createUser.account_id, email: createUser.email },
-        JWT_SECRET_KEY
-      );
 
       // success response
       res.status(201).json({
@@ -112,7 +114,7 @@ module.exports = {
         });
       }
 
-      let isPasswordCorrect = await bcrypt.compare(password, User.password);
+      let isPasswordCorrect = await bcrypt.compare(password, userLogin.password);
       if (!isPasswordCorrect) {
         return res.status(400).json({
           status: false,
@@ -121,17 +123,17 @@ module.exports = {
         });
       }
 
-      // jwt
-      let token = jwt.sign(
-        { id: User.account_id, email: User.email },
-        JWT_SECRET_KEY
-      );
-
-      // set token cookie
-      res.cookie('token', token, {
-        httpOnly: true,
-        maxAge: 60 * 60 * 24 * 30 * 1000,
-      });
+      const authHeader = req.headers['authorization'];
+      const token = authHeader && authHeader.split(' ')[1];
+  
+      if (!token || token !== userLogin.refreshToken) {
+        return res.status(401).json({
+          status: false,
+          message: 'Unauthorized',
+          error: 'Invalid token.',
+          data: null,
+        });
+      }
 
       // success response
       return res.status(200).json({
