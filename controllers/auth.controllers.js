@@ -66,22 +66,25 @@ module.exports = {
       // encrypting password
       let encryptedPassword = await bcrypt.hash(password, 10);
 
-      // Generate JWT
-      const token = jwt.sign(
-        { email },
-        JWT_SECRET_KEY,
-        { expiresIn: '1h' }
-      );
+      // Generate refresh token
+      const refreshToken = jwt.sign({ email }, JWT_SECRET_KEY, {
+        expiresIn: '7d',
+      });
 
-      // Create user with JWT
+      // Create user with refresh token
       let createUser = await User.create({
         username,
         email,
         password: encryptedPassword,
-        refreshToken: token
+        refresh_token: refreshToken,
       });
 
-      // success response
+      // Generate access token
+      const accessToken = jwt.sign({ email }, JWT_SECRET_KEY, {
+        expiresIn: '1h',
+      });
+
+      // Success response
       res.status(201).json({
         status: true,
         message: 'Register successfully.',
@@ -90,7 +93,8 @@ module.exports = {
             username: createUser.username,
             email: createUser.email,
           },
-          jwt: token,
+          accessToken,
+          refreshToken,
         },
       });
     } catch (error) {
@@ -113,8 +117,10 @@ module.exports = {
           data: null,
         });
       }
-
-      let isPasswordCorrect = await bcrypt.compare(password, userLogin.password);
+      let isPasswordCorrect = await bcrypt.compare(
+        password,
+        userLogin.password
+      );
       if (!isPasswordCorrect) {
         return res.status(400).json({
           status: false,
@@ -123,17 +129,12 @@ module.exports = {
         });
       }
 
-      const authHeader = req.headers['authorization'];
-      const token = authHeader && authHeader.split(' ')[1];
-  
-      if (!token || token !== userLogin.refreshToken) {
-        return res.status(401).json({
-          status: false,
-          message: 'Unauthorized',
-          error: 'Invalid token.',
-          data: null,
-        });
-      }
+      // Generate new access token
+      const accessToken = jwt.sign(
+        { id: userLogin._id, email: userLogin.email },
+        JWT_SECRET_KEY,
+        { expiresIn: '1h' }
+      );
 
       // success response
       return res.status(200).json({
@@ -144,8 +145,65 @@ module.exports = {
             username: userLogin.username,
             email: userLogin.email,
           },
-          jwt: token,
+          jwt: accessToken,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // refresh token
+  refreshToken: async (req, res, next) => {
+    try {
+      const { refreshToken } = req.body;
+
+      if (!refreshToken) {
+        return res.status(401).json({
+          status: false,
+          message: 'Unauthorized',
+          error: 'Refresh token is required.',
+          data: null,
+        });
+      }
+
+      // Find user by refresh token
+      const user = await User.findOne({ refresh_token: refreshToken });
+
+      if (!user) {
+        return res.status(403).json({
+          status: false,
+          message: 'Forbidden',
+          error: 'Invalid refresh token.',
+          data: null,
+        });
+      }
+
+      // Verify refresh token
+      jwt.verify(refreshToken, JWT_SECRET_KEY, (err, decoded) => {
+        if (err) {
+          return res.status(403).json({
+            status: false,
+            message: 'Forbidden',
+            error: 'Invalid refresh token.',
+            data: null,
+          });
+        }
+
+        // Generate new access token
+        const newAccessToken = jwt.sign(
+          { id: user._id, email: user.email },
+          JWT_SECRET_KEY,
+          { expiresIn: '1h' }
+        );
+
+        res.json({
+          status: true,
+          message: 'Token refreshed successfully.',
+          data: {
+            accessToken: newAccessToken,
+          },
+        });
       });
     } catch (error) {
       next(error);
