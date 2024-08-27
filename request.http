@@ -1,0 +1,24 @@
+###
+GET http://localhost:3000/
+
+# AUTH
+### Register
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+    "username":"kafka",
+    "email":"kafka@gmail.com",
+    "password":"kafka123",
+    "confirmPassword":"kafka123"
+}
+
+### Login
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Y2E0ZTY0OWM4ZmI0ZDI0MmExMzdkNyIsImVtYWlsIjoia2Fma2FAZ21haWwuY29tIiwiaWF0IjoxNzI0NTM0MzcyfQ.rD7fonKL159CpPK0dSY0MvLXZjhPXPVlfogXS514uXw
+
+{
+    "email":"kafka@gmail.com",
+    "password":"kafka123"
+}
