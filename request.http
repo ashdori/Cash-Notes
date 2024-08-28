@@ -22,3 +22,6 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Y2E0ZTY0OWM4ZmI0
     "email":"kafka@gmail.com",
     "password":"kafka123"
 }
+
+### refresh token
+GET http://localhost:3000/auth/refreshToken
