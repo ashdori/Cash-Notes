@@ -7,9 +7,9 @@ module.exports = {
       // create notes
       let createNotes = await Notes.create({
         title,
-        date,
         amount,
         description,
+        date,
         user,
       });
 

@@ -25,3 +25,31 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Y2E0ZTY0OWM4ZmI0
 
 ### refresh token
 GET http://localhost:3000/auth/refreshToken
+
+#CRUD
+### Create
+POST http://localhost:3000/note/create
+Content-Type: application/json
+
+{
+    "title":"Pengeluaran",
+    "amount":500000,
+    "description":"bayar kos dan makan",
+    "date":"12/06/2025",
+    "user":1
+}
+
+### Update
+PUT http://localhost:3000/note/update/1
+Content-Type: application/json
+
+{
+    "title":"Pengeluaran",
+    "amount":500000,
+    "description":"bayar kos, makan dan internet",
+    "date":"12/06/2025",
+    "user":1
+}
+
+### Delete
+DELETE http://localhost:3000/note/remove/1

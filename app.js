@@ -21,8 +21,10 @@ mongoose
 });
 
 const authRouter = require('./routes/auth.routes')
+const noteRouter = require('./routes/notes.routes')
 
 app.use('/auth', authRouter);
+app.use('/note', noteRouter)
 
 app.use('/', (req, res) => {
   try {
