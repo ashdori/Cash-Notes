@@ -26,6 +26,50 @@ module.exports = {
     }
   },
 
+  getNotesById: async (req, res, next) => {
+    try {
+      let { id } = req.params;
+
+      let getNote = await Notes.findById(req.params.id);
+
+      if (!getNote)
+        return res.status(404).json({
+          success: false,
+          message: 'Notes not found',
+          data: null,
+        });
+
+      res.status(200).json({
+        success: true,
+        message: 'Notes Found',
+        data: getNote,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  getAllNotes: async (req, res, next) => {
+    try {
+      let getNote = await Notes.find({});
+
+      if (getNote.length === 0)
+        return res.status(404).json({
+          success: false,
+          message: 'Notes not found',
+          data: null,
+        });
+
+      res.status(200).json({
+        success: true,
+        message: 'Notes Found',
+        data: getNote,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   updateNotes: async (req, res, next) => {
     try {
       let putNotes = await Notes.findByIdAndUpdate(req.params.id, req.body, {
