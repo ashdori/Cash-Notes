@@ -39,8 +39,14 @@ Content-Type: application/json
     "user":1
 }
 
+### get notes by id
+GET http://localhost:3000/note/1
+
+### get all notes
+GET http://localhost:3000/note/
+
 ### Update
-PUT http://localhost:3000/note/update/1
+PUT http://localhost:3000/note/1
 Content-Type: application/json
 
 {
@@ -52,4 +58,4 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE http://localhost:3000/note/remove/1
+DELETE http://localhost:3000/note/1
