@@ -118,6 +118,66 @@ module.exports = {
     }
   },
 
+  searchNotes: async (req, res, next) => {
+    try {
+      const { q, page, limit } = req.query;
+
+      if (!q || typeof q !== 'string' || q.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Search query (q) is required and must be a non-empty string.',
+          data: null,
+        });
+      }
+
+      if (q.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Search query must be at least 2 characters long.',
+          data: null,
+        });
+      }
+
+      const searchTerm = q.trim();
+      const currentPage = parseInt(page) || 1;
+      const recordsPerPage = parseInt(limit) || 10;
+
+      const searchQuery = {
+        $or: [
+          { title: { $regex: searchTerm, $options: 'i' } },
+          { description: { $regex: searchTerm, $options: 'i' } },
+        ],
+      };
+
+      const totalMatchingItems = await Notes.countDocuments(searchQuery);
+
+      const paginationInfo = generatePagination(totalMatchingItems, currentPage, recordsPerPage);
+
+      const foundNotes = await Notes.find(searchQuery)
+        .skip(paginationInfo.offset)
+        .limit(paginationInfo.perPage);
+
+      if (foundNotes.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No notes found matching your search query.',
+          data: null,
+          pagination: paginationInfo,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Notes found based on your search.',
+        data: foundNotes,
+        pagination: paginationInfo,
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  },
+
   updateNotes: async (req, res, next) => {
     try {
       let putNotes = await Notes.findByIdAndUpdate(req.params.id, req.body, {

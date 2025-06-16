@@ -43,10 +43,13 @@ Content-Type: application/json
 GET http://localhost:3000/note/1
 
 ### get all notes
-GET http://localhost:3000/note/
+GET http://localhost:3000/note
 
 ### get all notes with pagination
 GET http://localhost:3000/note?page=2&limit=5
+
+### search
+GET http://localhost:3000/search?q=pengeluaran
 
 ### Update
 PUT http://localhost:3000/note/1
