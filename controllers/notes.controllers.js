@@ -120,47 +120,140 @@ module.exports = {
 
   searchNotes: async (req, res, next) => {
     try {
-      const { q, page, limit } = req.query;
+      const {
+        q,
+        title,
+        description,
+        startDate,
+        endDate,
+        minAmount,
+        maxAmount,
+        page,
+        limit,
+      } = req.query;
 
-      if (!q || typeof q !== 'string' || q.trim().length === 0) {
+      let queryConditions = {};
+
+      if (q && typeof q === 'string' && q.trim().length > 0) {
+        const searchTerm = q.trim();
+        queryConditions.$or = [
+          { title: { $regex: searchTerm, $options: 'i' } },
+          { description: { $regex: searchTerm, $options: 'i' } },
+        ];
+        if (searchTerm.length < 2) {
+          return res.status(400).json({
+            success: false,
+            message:
+              'General search query (q) must be at least 2 characters long.',
+            data: null,
+          });
+        }
+      }
+
+      if (title && typeof title === 'string' && title.trim().length > 0) {
+        queryConditions.title = { $regex: title.trim(), $options: 'i' };
+      }
+
+      if (
+        description &&
+        typeof description === 'string' &&
+        description.trim().length > 0
+      ) {
+        queryConditions.description = {
+          $regex: description.trim(),
+          $options: 'i',
+        };
+      }
+
+      if (startDate || endDate) {
+        queryConditions.date = {};
+        if (startDate) {
+          const start = new Date(startDate);
+          if (isNaN(start.getTime())) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid startDate format. Use YYYY-MM-DD.',
+              data: null,
+            });
+          }
+          queryConditions.date.$gte = start;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          if (isNaN(end.getTime())) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid endDate format. Use YYYY-MM-DD.',
+              data: null,
+            });
+          }
+          end.setHours(23, 59, 59, 999);
+          queryConditions.date.$lte = end; // Less than or equal to end date
+        }
+      }
+
+      if (minAmount || maxAmount) {
+        queryConditions.amount = {};
+        if (minAmount) {
+          const min = parseFloat(minAmount);
+          if (isNaN(min) || min < 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid minAmount. Must be a positive number.',
+              data: null,
+            });
+          }
+          queryConditions.amount.$gte = min;
+        }
+        if (maxAmount) {
+          const max = parseFloat(maxAmount);
+          if (isNaN(max) || max < 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid maxAmount. Must be a positive number.',
+              data: null,
+            });
+          }
+          queryConditions.amount.$lte = max;
+        }
+      }
+
+      const hasSearchParam =
+        q ||
+        title ||
+        description ||
+        startDate ||
+        endDate ||
+        minAmount ||
+        maxAmount;
+      if (!hasSearchParam) {
         return res.status(400).json({
           success: false,
-          message: 'Search query (q) is required and must be a non-empty string.',
+          message:
+            'At least one search parameter (q, title, description, startDate, endDate, minAmount, maxAmount) is required.',
           data: null,
         });
       }
 
-      if (q.trim().length < 2) {
-        return res.status(400).json({
-          success: false,
-          message: 'Search query must be at least 2 characters long.',
-          data: null,
-        });
-      }
-
-      const searchTerm = q.trim();
       const currentPage = parseInt(page) || 1;
       const recordsPerPage = parseInt(limit) || 10;
 
-      const searchQuery = {
-        $or: [
-          { title: { $regex: searchTerm, $options: 'i' } },
-          { description: { $regex: searchTerm, $options: 'i' } },
-        ],
-      };
+      const totalMatchingItems = await Notes.countDocuments(queryConditions);
 
-      const totalMatchingItems = await Notes.countDocuments(searchQuery);
+      const paginationInfo = generatePagination(
+        totalMatchingItems,
+        currentPage,
+        recordsPerPage
+      );
 
-      const paginationInfo = generatePagination(totalMatchingItems, currentPage, recordsPerPage);
-
-      const foundNotes = await Notes.find(searchQuery)
+      const foundNotes = await Notes.find(queryConditions)
         .skip(paginationInfo.offset)
         .limit(paginationInfo.perPage);
 
       if (foundNotes.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'No notes found matching your search query.',
+          message: 'No notes found matching your search criteria.',
           data: null,
           pagination: paginationInfo,
         });
@@ -168,11 +261,10 @@ module.exports = {
 
       res.status(200).json({
         success: true,
-        message: 'Notes found based on your search.',
+        message: 'Notes found based on your search criteria.',
         data: foundNotes,
         pagination: paginationInfo,
       });
-
     } catch (error) {
       next(error);
     }
