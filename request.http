@@ -46,10 +46,19 @@ GET http://localhost:3000/note/1
 GET http://localhost:3000/note
 
 ### get all notes with pagination
-GET http://localhost:3000/note?page=2&limit=5
+GET http://localhost:3000/notes/paginated?page=1&limit=10
 
 ### search
-GET http://localhost:3000/search?q=pengeluaran
+GET http://localhost:3000/notes/search?q=keyword&startDate=2024-01-01&includeArchived=true
+
+### archive notes
+PUT http://localhost:3000/notes/archive/1
+
+### unarchive notes
+PUT http://localhost:3000/notes/unarchive/1
+
+### get all archived notes with pagination
+GET http://localhost:3000/notes/archived?page=1&limit=10
 
 ### Update
 PUT http://localhost:3000/note/1
@@ -62,6 +71,15 @@ Content-Type: application/json
     "date":"12/06/2025",
     "user":1
 }
+
+### move a note to trash by ID
+PUT http://localhost:3000/notes/trash/1
+
+### restore a note from trash by ID (move from trashed to active)
+PUT http://localhost:3000/notes/restore/1
+
+### get all notes currently in trash with pagination
+GET http://localhost:3000/notes/trashed?page=1&limit=10
 
 ### Delete
 DELETE http://localhost:3000/note/1

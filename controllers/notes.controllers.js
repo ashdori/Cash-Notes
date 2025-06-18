@@ -12,6 +12,7 @@ module.exports = {
         description,
         date,
         user,
+        status: 'active',
       });
 
       // success response
@@ -31,7 +32,11 @@ module.exports = {
     try {
       let { id } = req.params;
 
-      let getNote = await Notes.findById(req.params.id);
+      // find by id with active and archived status
+      let getNote = await Notes.findOne({
+        _id: id,
+        status: { $in: ['active', 'archived'] },
+      });
 
       if (!getNote)
         return res.status(404).json({
@@ -52,7 +57,8 @@ module.exports = {
 
   getAllNotes: async (req, res, next) => {
     try {
-      let getNote = await Notes.find({});
+      // get all notes with active status
+      let getNote = await Notes.find({ status: 'active' });
 
       if (getNote.length === 0)
         return res.status(404).json({
@@ -71,12 +77,13 @@ module.exports = {
     }
   },
 
+  // find all notes with active status and with pagination
   getAllNotesPagination: async (req, res, next) => {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
 
-      const totalItems = await Notes.countDocuments({});
+      const totalItems = await Notes.countDocuments({ status: 'active' });
       const paginationInfo = generatePagination(totalItems, page, limit);
 
       const getNote = await Notes.find({})
@@ -110,14 +117,6 @@ module.exports = {
     }
   },
 
-  handleGetAllNotes: async (req, res, next) => {
-    if (req.query.page || req.query.limit) {
-      return module.exports.getAllNotesPagination(req, res, next);
-    } else {
-      return module.exports.getAllNotes(req, res, next);
-    }
-  },
-
   searchNotes: async (req, res, next) => {
     try {
       const {
@@ -130,9 +129,17 @@ module.exports = {
         maxAmount,
         page,
         limit,
+        includeArchived,
       } = req.query;
 
       let queryConditions = {};
+
+      // include status
+      if (includeArchived === 'true') {
+        queryConditions.status = { $in: ['active', 'archived'] };
+      } else {
+        queryConditions.status = 'active';
+      }
 
       if (q && typeof q === 'string' && q.trim().length > 0) {
         const searchTerm = q.trim();
@@ -165,6 +172,7 @@ module.exports = {
         };
       }
 
+      // start date and end date
       if (startDate || endDate) {
         queryConditions.date = {};
         if (startDate) {
@@ -192,6 +200,7 @@ module.exports = {
         }
       }
 
+      // max and min amount
       if (minAmount || maxAmount) {
         queryConditions.amount = {};
         if (minAmount) {
@@ -226,11 +235,11 @@ module.exports = {
         endDate ||
         minAmount ||
         maxAmount;
-      if (!hasSearchParam) {
+      if (!hasSearchParam && !includeArchived) {
         return res.status(400).json({
           success: false,
           message:
-            'At least one search parameter (q, title, description, startDate, endDate, minAmount, maxAmount) is required.',
+            'At least one search parameter (q, title, description, startDate, endDate, minAmount, maxAmount or includeArchived=true) is required.',
           data: null,
         });
       }
@@ -263,6 +272,216 @@ module.exports = {
         success: true,
         message: 'Notes found based on your search criteria.',
         data: foundNotes,
+        pagination: paginationInfo,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Archives a note by updating its status to 'archived'
+  archiveNote: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const archivedNote = await Notes.findByIdAndUpdate(
+        id,
+        { status: 'archived' },
+        { new: true }
+      );
+
+      if (!archivedNote) {
+        return res.status(404).json({
+          success: false,
+          message: 'Note not found.',
+        });
+      }
+      // to ensure the note was not already trashed
+      if (archivedNote.status === 'trashed') {
+        return res.status(400).json({
+          success: false,
+          message:
+            'Cannot archive a note that is in trash. Please restore it first.',
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Note archived successfully.',
+        data: archivedNote,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Unarchives a note by updating its status from 'archived' to 'active'.
+  unarchiveNote: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const unarchivedNote = await Notes.findByIdAndUpdate(
+        id,
+        { status: 'active' },
+        { new: true }
+      );
+
+      if (!unarchivedNote) {
+        return res.status(404).json({
+          success: false,
+          message: 'Note not found.',
+        });
+      }
+      // Ensure it was actually an archived note
+      if (unarchivedNote.status !== 'active') {
+        return res.status(400).json({
+          success: false,
+          message: 'Note is not in archived status or is in trash.',
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Note unarchived successfully.',
+        data: unarchivedNote,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Moves a note to trash by updating its status to 'trashed'.
+  trashNote: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const trashedNote = await Notes.findByIdAndUpdate(
+        id,
+        { status: 'trashed' },
+        { new: true }
+      );
+
+      if (!trashedNote) {
+        return res.status(404).json({
+          success: false,
+          message: 'Note not found.',
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Note moved to trash successfully.',
+        data: trashedNote,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Restores a note from trash by updating its status from 'trashed' to 'active'.
+  restoreNoteFromTrash: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const restoredNote = await Notes.findByIdAndUpdate(
+        id,
+        { status: 'active' },
+        { new: true }
+      );
+
+      if (!restoredNote) {
+        return res.status(404).json({
+          success: false,
+          message: 'Note not found in trash.',
+        });
+      }
+      // Ensure it was actually in trash
+      if (restoredNote.status !== 'active') {
+        return res.status(400).json({
+          success: false,
+          message: 'Note is not in trash status.',
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Note restored from trash successfully.',
+        data: restoredNote,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Gets all notes that are currently in 'archived' status.
+  getArchivedNotes: async (req, res, next) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+
+      const totalItems = await Notes.countDocuments({ status: 'archived' });
+      const paginationInfo = generatePagination(totalItems, page, limit);
+
+      const archivedNotes = await Notes.find({ status: 'archived' })
+        .skip(paginationInfo.offset)
+        .limit(paginationInfo.perPage);
+
+      if (archivedNotes.length === 0 && totalItems > 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No archived notes found for this page.',
+          data: null,
+          pagination: paginationInfo,
+        });
+      } else if (totalItems === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No archived notes found.',
+          data: null,
+          pagination: paginationInfo,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Archived Notes Found',
+        data: archivedNotes,
+        pagination: paginationInfo,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Gets all notes that are currently in 'trashed' status.
+  getTrashedNotes: async (req, res, next) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+
+      const totalItems = await Notes.countDocuments({ status: 'trashed' });
+      const paginationInfo = generatePagination(totalItems, page, limit);
+
+      const trashedNotes = await Notes.find({ status: 'trashed' })
+        .skip(paginationInfo.offset)
+        .limit(paginationInfo.perPage);
+
+      if (trashedNotes.length === 0 && totalItems > 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No notes in trash found for this page.',
+          data: null,
+          pagination: paginationInfo,
+        });
+      } else if (totalItems === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Trash is empty.',
+          data: null,
+          pagination: paginationInfo,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Notes in Trash Found',
+        data: trashedNotes,
         pagination: paginationInfo,
       });
     } catch (error) {
