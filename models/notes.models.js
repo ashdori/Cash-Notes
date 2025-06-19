@@ -14,10 +14,6 @@ const noteSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    status: {
-      type: String,
-      required: true,
-    },
     date: {
       type: Date,
       default: Date.now,
@@ -27,6 +23,12 @@ const noteSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    status: {
+      type: String,
+      enum: ['active', 'archived', 'trashed'],
+      default: 'active',
+    },
+    tags: [{ type: String, trim: true }],
   },
   { timestamps: true }
 );
