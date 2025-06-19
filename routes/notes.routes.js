@@ -5,6 +5,8 @@ const {
   getAllNotes,
   getAllNotesPagination,
   searchNotes,
+  addTagToNote,
+  removeTagFromNote,
   archiveNote,
   unarchiveNote,
   trashNote,
@@ -39,6 +41,13 @@ notesRouter.get('/paginated', getAllNotesPagination);
 
 // enhanced searching of notes (default: active, can include archived)
 notesRouter.get('/search', searchNotes);
+
+// --- Tagging Operations ---
+// Route to add a tag to a note
+notesRouter.put('/add-tag/:id', addTagToNote);
+
+// Route to remove a tag from a note
+notesRouter.put('/remove-tag/;id', removeTagFromNote);
 
 // --- Archive Operations ---
 // archive a note by ID

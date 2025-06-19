@@ -72,6 +72,22 @@ Content-Type: application/json
     "user":1
 }
 
+### add tags
+PUT http://localhost:3000/notes/:id/add-tag
+Content-Type: application/json
+
+{
+    "tag": "new_tag" 
+}
+
+### remove tags
+PUT http://localhost:3000/notes/:id/remove-tag
+Content-Type: application/json
+
+{
+    "tag":"old_tag"
+}
+
 ### move a note to trash by ID
 PUT http://localhost:3000/notes/trash/1
 
