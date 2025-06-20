@@ -66,6 +66,19 @@ module.exports = {
 
   getAllNotes: async (req, res, next) => {
     try {
+      const { sortBy, sortOrder } = req.query;
+
+      let sortOptions = {};
+      if (
+        sortBy &&
+        ['title', 'date', 'amount', 'createdAt', 'updatedAt'].includes(sortBy)
+      ) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      } else {
+        // Default sort if no valid sortBy or sortOrder is provided
+        // Sort by creation date descending by default
+        sortOptions.createdAt = -1;
+      }
       // get all notes with active status
       let getNote = await Notes.find({ status: 'active' });
 
@@ -91,11 +104,23 @@ module.exports = {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
+      const { sortBy, sortOrder } = req.query;
+
+      let sortOptions = {};
+      if (
+        sortBy &&
+        ['title', 'date', 'amount', 'createdAt', 'updatedAt'].includes(sortBy)
+      ) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      } else {
+        sortOptions.createdAt = -1;
+      }
 
       const totalItems = await Notes.countDocuments({ status: 'active' });
       const paginationInfo = generatePagination(totalItems, page, limit);
 
-      const getNote = await Notes.find({})
+      const getNote = await Notes.find({ status: 'active' })
+        .sort(sortOptions)
         .skip(paginationInfo.offset)
         .limit(paginationInfo.perPage);
 
@@ -140,6 +165,8 @@ module.exports = {
         page,
         limit,
         includeArchived,
+        sortBy,
+        sortOrder,
       } = req.query;
 
       let queryConditions = {};
@@ -168,7 +195,10 @@ module.exports = {
       }
 
       if (title && typeof title === 'string' && title.trim().length > 0) {
-        queryConditions.title = { $regex: title.trim(), $options: 'i' };
+        queryConditions.title = {
+          $regex: title.trim(),
+          $options: 'i',
+        };
       }
 
       if (
@@ -265,6 +295,17 @@ module.exports = {
         });
       }
 
+      // --- Sorting Logic ---
+      let sortOptions = {};
+      if (
+        sortBy &&
+        ['title', 'date', 'amount', 'createdAt', 'updatedAt'].includes(sortBy)
+      ) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      } else {
+        sortOptions.createdAt = -1; // Default sort for search results
+      }
+
       const currentPage = parseInt(page) || 1;
       const recordsPerPage = parseInt(limit) || 10;
 
@@ -277,6 +318,7 @@ module.exports = {
       );
 
       const foundNotes = await Notes.find(queryConditions)
+        .sort(sortOptions)
         .skip(paginationInfo.offset)
         .limit(paginationInfo.perPage);
 
@@ -517,11 +559,23 @@ module.exports = {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
+      const { sortBy, sortOrder } = req.query;
+
+      let sortOptions = {};
+      if (
+        sortBy &&
+        ['title', 'date', 'amount', 'createdAt', 'updatedAt'].includes(sortBy)
+      ) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      } else {
+        sortOptions.createdAt = -1;
+      }
 
       const totalItems = await Notes.countDocuments({ status: 'archived' });
       const paginationInfo = generatePagination(totalItems, page, limit);
 
       const archivedNotes = await Notes.find({ status: 'archived' })
+        .sort(sortOptions)
         .skip(paginationInfo.offset)
         .limit(paginationInfo.perPage);
 
@@ -557,11 +611,23 @@ module.exports = {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
+      const { sortBy, sortOrder } = req.query;
+
+      let sortOptions = {};
+      if (
+        sortBy &&
+        ['title', 'date', 'amount', 'createdAt', 'updatedAt'].includes(sortBy)
+      ) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      } else {
+        sortOptions.createdAt = -1;
+      }
 
       const totalItems = await Notes.countDocuments({ status: 'trashed' });
       const paginationInfo = generatePagination(totalItems, page, limit);
 
       const trashedNotes = await Notes.find({ status: 'trashed' })
+        .sort(sortOptions)
         .skip(paginationInfo.offset)
         .limit(paginationInfo.perPage);
 

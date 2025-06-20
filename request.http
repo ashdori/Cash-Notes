@@ -43,13 +43,13 @@ Content-Type: application/json
 GET http://localhost:3000/note/1
 
 ### get all notes
-GET http://localhost:3000/note
+GET http://localhost:3000/notes?sortBy=title&sortOrder=asc
 
 ### get all notes with pagination
 GET http://localhost:3000/notes/paginated?page=1&limit=10
 
 ### search
-GET http://localhost:3000/notes/search?q=keyword&startDate=2024-01-01&includeArchived=true
+GET http://localhost:3000//notes/search?q=proyek&sortBy=amount&sortOrder=asc
 
 ### archive notes
 PUT http://localhost:3000/notes/archive/1
@@ -58,7 +58,7 @@ PUT http://localhost:3000/notes/archive/1
 PUT http://localhost:3000/notes/unarchive/1
 
 ### get all archived notes with pagination
-GET http://localhost:3000/notes/archived?page=1&limit=10
+GET http://localhost:3000/notes/archived?sortBy=createdAt&sortOrder=asc
 
 ### Update
 PUT http://localhost:3000/note/1
@@ -95,7 +95,7 @@ PUT http://localhost:3000/notes/trash/1
 PUT http://localhost:3000/notes/restore/1
 
 ### get all notes currently in trash with pagination
-GET http://localhost:3000/notes/trashed?page=1&limit=10
+GET http://localhost:3000/notes/trashed?sortBy=createdAt&sortOrder=desc
 
 ### Delete
 DELETE http://localhost:3000/note/1
