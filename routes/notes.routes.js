@@ -1,21 +1,23 @@
 const Router = require('express');
 const {
-  addNotes,
   getNotesById,
   getAllNotes,
   getAllNotesPagination,
   searchNotes,
+  getArchivedNotes,
+  getTrashedNotes,
+} = require('../controllers/notes/notes.read.controllers');
+const {
+  addNotes,
   addTagToNote,
   removeTagFromNote,
   archiveNote,
   unarchiveNote,
   trashNote,
   restoreNoteFromTrash,
-  getArchivedNotes,
-  getTrashedNotes,
   updateNotes,
   removeNotes,
-} = require('../controllers/notes.controllers');
+} = require('../controllers/notes/notes.write.controllers');
 
 const notesRouter = Router();
 
