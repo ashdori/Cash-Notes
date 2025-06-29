@@ -8,7 +8,7 @@ const noteSchema = new mongoose.Schema(
     },
     amount: {
       type: Number,
-      required: true,
+      default: 0,
     },
     description: {
       type: String,
@@ -29,6 +29,7 @@ const noteSchema = new mongoose.Schema(
       default: 'active',
     },
     tags: [{ type: String, trim: true }],
+    trashedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
