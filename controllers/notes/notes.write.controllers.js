@@ -1,5 +1,4 @@
 const Notes = require('../../models/notes.models');
-const generatePagination = require('../../utils/paginationHelper');
 
 module.exports = {
   addNotes: async (req, res, next) => {
